@@ -1,0 +1,534 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: Renewable Energy Forecast API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: countries
+    description: Country operations
+  - name: energy
+    description: Energy data and forecasting
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /countries:
+    get:
+      operationId: listCountries
+      tags: [countries]
+      summary: List all countries
+      parameters:
+        - name: continent
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of countries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Country"
+
+  /countries/{code}:
+    get:
+      operationId: getCountry
+      tags: [countries]
+      summary: Get country details
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Country details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CountryDetail"
+        "404":
+          description: Not found
+
+  /energy/data:
+    get:
+      operationId: listEnergyData
+      tags: [energy]
+      summary: List energy data with filters
+      parameters:
+        - name: countryCode
+          in: query
+          schema:
+            type: string
+        - name: source
+          in: query
+          schema:
+            type: string
+        - name: year
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Energy data records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EnergyRecord"
+
+  /energy/data/{countryCode}:
+    get:
+      operationId: getCountryEnergyData
+      tags: [energy]
+      summary: Get energy data for a specific country
+      parameters:
+        - name: countryCode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Energy data for country
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CountryEnergyProfile"
+        "404":
+          description: Not found
+
+  /energy/forecast/{countryCode}:
+    get:
+      operationId: getCountryForecast
+      tags: [energy]
+      summary: Get renewable energy forecast for a country
+      parameters:
+        - name: countryCode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Forecast data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ForecastPoint"
+        "404":
+          description: Not found
+
+  /energy/global-stats:
+    get:
+      operationId: getGlobalStats
+      tags: [energy]
+      summary: Get global renewable energy statistics
+      responses:
+        "200":
+          description: Global stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GlobalStats"
+
+  /energy/top-countries:
+    get:
+      operationId: getTopCountries
+      tags: [energy]
+      summary: Get top countries by renewable capacity or generation
+      parameters:
+        - name: metric
+          in: query
+          schema:
+            type: string
+        - name: source
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Top countries ranking
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CountryRanking"
+
+  /energy/source-breakdown:
+    get:
+      operationId: getSourceBreakdown
+      tags: [energy]
+      summary: Get global energy source breakdown
+      parameters:
+        - name: year
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Source breakdown
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SourceBreakdown"
+
+  /energy/trends:
+    get:
+      operationId: getGlobalTrends
+      tags: [energy]
+      summary: Get global renewable energy trends over years
+      parameters:
+        - name: source
+          in: query
+          schema:
+            type: string
+        - name: fromYear
+          in: query
+          schema:
+            type: integer
+        - name: toYear
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Trend data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrendPoint"
+
+  /alerts:
+    get:
+      operationId: listAlerts
+      tags: [energy]
+      summary: List policy and milestone alerts
+      parameters:
+        - name: countryCode
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PolicyAlert"
+
+  /energy/continent-stats:
+    get:
+      operationId: getContinentStats
+      tags: [energy]
+      summary: Get renewable energy stats grouped by continent
+      responses:
+        "200":
+          description: Continent stats
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ContinentStat"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    Country:
+      type: object
+      required: [code, name, continent]
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        continent:
+          type: string
+        flag:
+          type: string
+        population:
+          type: ["integer", "null"]
+        renewableSharePercent:
+          type: ["number", "null"]
+        totalCapacityGw:
+          type: ["number", "null"]
+
+    CountryDetail:
+      type: object
+      required: [code, name, continent]
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        continent:
+          type: string
+        flag:
+          type: string
+        population:
+          type: ["integer", "null"]
+        gdpBillionUsd:
+          type: ["number", "null"]
+        renewableSharePercent:
+          type: ["number", "null"]
+        totalCapacityGw:
+          type: ["number", "null"]
+        solarCapacityGw:
+          type: ["number", "null"]
+        windCapacityGw:
+          type: ["number", "null"]
+        hydroCapacityGw:
+          type: ["number", "null"]
+        biomassCapacityGw:
+          type: ["number", "null"]
+        geothermalCapacityGw:
+          type: ["number", "null"]
+        co2ReductionMtPerYear:
+          type: ["number", "null"]
+        policyTarget2030:
+          type: ["string", "null"]
+
+    EnergyRecord:
+      type: object
+      required: [id, countryCode, countryName, source, year, capacityGw, generationTwh]
+      properties:
+        id:
+          type: integer
+        countryCode:
+          type: string
+        countryName:
+          type: string
+        source:
+          type: string
+          description: solar | wind | hydro | biomass | geothermal | other
+        year:
+          type: integer
+        capacityGw:
+          type: number
+        generationTwh:
+          type: number
+        percentOfTotal:
+          type: ["number", "null"]
+
+    CountryEnergyProfile:
+      type: object
+      required: [countryCode, countryName, records, historicalTrend]
+      properties:
+        countryCode:
+          type: string
+        countryName:
+          type: string
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/EnergyRecord"
+        historicalTrend:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrendPoint"
+
+    ForecastPoint:
+      type: object
+      required: [year, source, projectedCapacityGw, projectedGenerationTwh, growthRatePercent]
+      properties:
+        year:
+          type: integer
+        source:
+          type: string
+        projectedCapacityGw:
+          type: number
+        projectedGenerationTwh:
+          type: number
+        growthRatePercent:
+          type: number
+        confidenceLow:
+          type: ["number", "null"]
+        confidenceHigh:
+          type: ["number", "null"]
+
+    GlobalStats:
+      type: object
+      required: [totalRenewableCapacityGw, totalRenewableGenerationTwh, renewableSharePercent, countriesTracked, yearOverYearGrowthPercent, co2AvoidedMt]
+      properties:
+        totalRenewableCapacityGw:
+          type: number
+        totalRenewableGenerationTwh:
+          type: number
+        renewableSharePercent:
+          type: number
+        countriesTracked:
+          type: integer
+        yearOverYearGrowthPercent:
+          type: number
+        co2AvoidedMt:
+          type: number
+        topSolarCountry:
+          type: string
+        topWindCountry:
+          type: string
+        topHydroCountry:
+          type: string
+        fastestGrowingCountry:
+          type: string
+
+    CountryRanking:
+      type: object
+      required: [rank, countryCode, countryName, continent, value, unit]
+      properties:
+        rank:
+          type: integer
+        countryCode:
+          type: string
+        countryName:
+          type: string
+        continent:
+          type: string
+        flag:
+          type: string
+        value:
+          type: number
+        unit:
+          type: string
+        changeFromLastYear:
+          type: ["number", "null"]
+
+    SourceBreakdown:
+      type: object
+      required: [source, capacityGw, generationTwh, sharePercent, color]
+      properties:
+        source:
+          type: string
+        capacityGw:
+          type: number
+        generationTwh:
+          type: number
+        sharePercent:
+          type: number
+        color:
+          type: string
+        yoyGrowthPercent:
+          type: ["number", "null"]
+
+    TrendPoint:
+      type: object
+      required: [year, totalCapacityGw, totalGenerationTwh, renewableSharePercent]
+      properties:
+        year:
+          type: integer
+        totalCapacityGw:
+          type: number
+        totalGenerationTwh:
+          type: number
+        renewableSharePercent:
+          type: number
+        solarGw:
+          type: ["number", "null"]
+        windGw:
+          type: ["number", "null"]
+        hydroGw:
+          type: ["number", "null"]
+        biomassGw:
+          type: ["number", "null"]
+        geothermalGw:
+          type: ["number", "null"]
+
+    PolicyAlert:
+      type: object
+      required: [id, countryCode, countryName, category, headline, summary, publishedAt]
+      properties:
+        id:
+          type: integer
+        countryCode:
+          type: string
+        countryName:
+          type: string
+        category:
+          type: string
+          description: policy | milestone | investment | target | auction
+        headline:
+          type: string
+        summary:
+          type: string
+        source:
+          type: ["string", "null"]
+        impactGw:
+          type: ["integer", "null"]
+        publishedAt:
+          type: string
+          format: date-time
+
+    ContinentStat:
+      type: object
+      required: [continent, totalCapacityGw, renewableSharePercent, countryCount, leadingCountry]
+      properties:
+        continent:
+          type: string
+        totalCapacityGw:
+          type: number
+        renewableSharePercent:
+          type: number
+        countryCount:
+          type: integer
+        leadingCountry:
+          type: string
+        solarGw:
+          type: ["number", "null"]
+        windGw:
+          type: ["number", "null"]
+        hydroGw:
+          type: ["number", "null"]
+        yoyGrowthPercent:
+          type: ["number", "null"]
